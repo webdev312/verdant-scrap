@@ -1,12 +1,15 @@
 import json
 import requests
 import MySQLdb
+import time
+from datetime import datetime
 
 # API token
-g_strToken = ""
+g_strToken = "769b49ae6b2fd4e6678d55cafd74f0c872969b68ed984d295096ddab0bb018b6"
 
 # Global variables
 g_arr_hotel = list()
+g_arr_room = list()
 
 def isNull(entry):
     if (entry == "None"): return "null"
@@ -90,14 +93,16 @@ def get_room_list(cursor):
             resp = requests.get(strlinkRoom).json()
 
             arr_room = list()
-            for room in resp["data"]: arr_room.append(room)
+            for room in resp["data"]:
+                g_arr_room.append(room)
+                arr_room.append(room)
 
             str_room_delete_query = "DELETE from room WHERE room_id IN ("
             str_alert_delete_query = "DELETE from roomalerts WHERE cms_room_id IN ("
             for room in arr_room:
                 str_room_delete_query = str_room_delete_query + str(room["room_id"]) + ","
                 str_alert_delete_query = str_alert_delete_query + str(room["room_id"]) + ","
-            str_room_delete_query = str_alert_delete_query[:-1] + ")"
+            str_room_delete_query = str_room_delete_query[:-1] + ")"
             str_alert_delete_query = str_alert_delete_query[:-1] + ")"
             cursor.execute(str_room_delete_query)
             cursor.execute(str_alert_delete_query)
@@ -171,21 +176,56 @@ def get_room_list(cursor):
         print ("exception : get_room_list")
         print (str(e))
 
+def get_report_data(cursor):
+    try:
+        str_report_delete_query = "DELETE from reports WHERE room_id IN ("
+        str_report_insert_query = """INSERT INTO reports (room_id, from_time, to_time, comp_runtime, heater_runtime, thermostat_id) VALUES (%s, %s, %s, %s, %s, %s)"""
+        arr_report_insert_query = list()
+        for room in g_arr_room:
+            str_report_delete_query = str_report_delete_query + str(room['room_id']) + ","
+
+            str_room_id = room['room_id']
+            str_from = room['room_date_created']
+            str_to = datetime.today().strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            str_request_url = """https://api.thermostatsolutions.com/v1/reports/runtime/hotel/room/%s?from=%s&to=%s&access_token=%s""" % (str_room_id, str_from, str_to, g_strToken)
+            reports = requests.get(str_request_url).json()
+
+            for report in reports:
+                each_report = list()
+                each_report.append(isNull(str(str_room_id)))
+                each_report.append(isNull(str(str_from)))
+                each_report.append(isNull(str(str_to)))
+                each_report.append(isNull(str(report["comp_runtime"])))
+                each_report.append(isNull(str(report["heater_runtime"])))
+                each_report.append(isNull(str(report["room_id"])))
+                arr_report_insert_query.append(each_report)
+
+        str_report_delete_query = str_report_delete_query[:-1] + ")"
+        cursor.execute(str_report_delete_query)
+        cursor.executemany(str_report_insert_query, arr_report_insert_query)
+    except Exception as e:
+        print ("exception : get_report_data")
+        print (str(e))
+
 def main():
+    start = time.time()
     db_conn = MySQLdb.connect(
-        host="",
-        database="",
-        user="",
-        password=""
+        host="verdant.c5rdujz93n3m.us-east-1.rds.amazonaws.com",
+        database="verdant",
+        user="admin",
+        password="qweasdzxcasdqwe"
     )
 
     cursor = db_conn.cursor()
 
     get_hotel_list(cursor)
     get_room_list(cursor)
+    get_report_data(cursor)
 
     db_conn.commit()
     db_conn.close()
+    end = time.time()
+    print (end-start)
 
 
 if __name__ == '__main__':
