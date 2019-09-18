@@ -3,7 +3,7 @@ import requests
 import MySQLdb
 
 # API token
-g_strToken = "769b49ae6b2fd4e6678d55cafd74f0c872969b68ed984d295096ddab0bb018b6"
+g_strToken = ""
 
 # Global variables
 g_arr_hotel = list()
@@ -82,23 +82,101 @@ def get_hotel_list(cursor):
 def get_room_list(cursor):
     try:
         for hotel in g_arr_hotel:
+            print(hotel["hotel_id"])
             strFirstRoom = "https://api.thermostatsolutions.com/v1/rooms/?page=0&perpage=1&hotel_id=" + str(hotel['hotel_id'])
             n_pages = get_total_page_count(strFirstRoom)
 
             strlinkRoom = "https://api.thermostatsolutions.com/v1/rooms/?hotel_id=" + str(hotel['hotel_id']) + "&page=0&perpage=" + str(n_pages) + "&access_token=" + g_strToken
             resp = requests.get(strlinkRoom).json()
-            print(n_pages)
-            print(str(len(resp["data"])))
+
+            arr_room = list()
+            for room in resp["data"]: arr_room.append(room)
+
+            str_room_delete_query = "DELETE from room WHERE room_id IN ("
+            str_alert_delete_query = "DELETE from roomalerts WHERE cms_room_id IN ("
+            for room in arr_room:
+                str_room_delete_query = str_room_delete_query + str(room["room_id"]) + ","
+                str_alert_delete_query = str_alert_delete_query + str(room["room_id"]) + ","
+            str_room_delete_query = str_alert_delete_query[:-1] + ")"
+            str_alert_delete_query = str_alert_delete_query[:-1] + ")"
+            cursor.execute(str_room_delete_query)
+            cursor.execute(str_alert_delete_query)
+
+            str_room_insert_query = """INSERT INTO room (room_id, room_hotel_id, room_name, room_date_created, room_date_modified, room_deleted, room_created_by, room_modified_by, room_energy_profile_id, room_vip_mode, room_equipment_profile_id, room_pms_enabled, room_pms_profile_id, room_number, room_edi_termostat_location, room_edi_termostat_location_hex_b1, room_edi_termostat_location_hex_b2, room_floor_plan_id, room_floor_plan_pos_x, room_floor_plan_pos_y, room_floor_number, room_network_id, room_humidity_allowed, room_energy_report_running, room_cooler_counter, room_heater_counter, room_system_runtime_counter, room_system_runtime_counter_last_value, room_cooler_counter_last_value, room_heater_counter_last_value, room_occupancy_flag, room_hw, room_sw, svn_pic, svn_radio, active_sensor, roomp_termostat_id, roomp_occupancy, roomp_temperature, roomp_thermostat, roomp_heat_setpoint, roomp_cool_setpoint, roomp_auto_setpoint, roomp_system_status_1, roomp_system_status_2, roomp_recovery_time, roomp_max_setpoint_heat, roomp_min_setpoint_cool) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+            arr_room_insert_query = list()
+            str_alert_insert_query = """INSERT INTO roomalerts (id, alert_type, cms_room_id) VALUES (%s, %s, %s)"""
+            arr_alert_insert_query = list()
+            for room in arr_room:
+                each_room = list()
+                each_room.append(isNull(str(room["room_id"])))
+                each_room.append(isNull(str(room["room_hotel_id"])))
+                each_room.append(isNull(str(room["room_name"])))
+                each_room.append(isNull(str(room["room_date_created"])))
+                each_room.append(isNull(str(room["room_date_modified"])))
+                each_room.append(isNull(str(room["room_deleted"])))
+                each_room.append(isNull(str(room["room_created_by"])))
+                each_room.append(isNull(str(room["room_modified_by"])))
+                each_room.append(isNull(str(room["room_energy_profile_id"])))
+                each_room.append(isNull(str(room["room_vip_mode"])))
+                each_room.append(isNull(str(room["room_equipment_profile_id"])))
+                each_room.append(isNull(str(room["room_pms_enabled"])))
+                each_room.append(isNull(str(room["room_pms_profile_id"])))
+                each_room.append(isNull(str(room["room_number"])))
+                each_room.append(isNull(str(room["room_edi_termostat_location"])))
+                each_room.append(isNull(str(room["room_edi_termostat_location_hex_b1"])))
+                each_room.append(isNull(str(room["room_edi_termostat_location_hex_b2"])))
+                each_room.append(isNull(str(room["room_floor_plan_id"])))
+                each_room.append(isNull(str(room["room_floor_plan_pos_x"])))
+                each_room.append(isNull(str(room["room_floor_plan_pos_y"])))
+                each_room.append(isNull(str(room["room_floor_number"])))
+                each_room.append(isNull(str(room["room_network_id"])))
+                each_room.append(isNull(str(room["room_humidity_allowed"])))
+                each_room.append(isNull(str(room["room_energy_report_running"])))
+                each_room.append(isNull(str(room["room_cooler_counter"])))
+                each_room.append(isNull(str(room["room_heater_counter"])))
+                each_room.append(isNull(str(room["room_system_runtime_counter"])))
+                each_room.append(isNull(str(room["room_system_runtime_counter_last_value"])))
+                each_room.append(isNull(str(room["room_cooler_counter_last_value"])))
+                each_room.append(isNull(str(room["room_heater_counter_last_value"])))
+                each_room.append(isNull(str(room["room_occupancy_flag"])))
+                each_room.append(isNull(str(room["room_hw"])))
+                each_room.append(isNull(str(room["room_sw"])))
+                each_room.append(isNull(str(room["svn_pic"])))
+                each_room.append(isNull(str(room["svn_radio"])))
+                each_room.append(isNull(str(room["active_sensor"])))
+                each_room.append(isNull(str(room["room_params"]["termostat_id"])) if room["room_params"].get("termostat_id") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["occupancy"])) if room["room_params"].get("occupancy") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["temperature"])) if room["room_params"].get("temperature") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["thermostat"])) if room["room_params"].get("thermostat") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["heat_setpoint"])) if room["room_params"].get("heat_setpoint") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["cool_setpoint"])) if room["room_params"].get("cool_setpoint") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["auto_setpoint"])) if room["room_params"].get("auto_setpoint") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["system_status_1"])) if room["room_params"].get("system_status_1") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["system_status_2"])) if room["room_params"].get("system_status_2") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["recovery_time"])) if room["room_params"].get("recovery_time") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["max_setpoint_heat"])) if room["room_params"].get("max_setpoint_heat") != None else "null")
+                each_room.append(isNull(str(room["room_params"]["min_setpoint_cool"])) if room["room_params"].get("min_setpoint_cool") != None else "null")
+                arr_room_insert_query.append(each_room)
+
+                for alert in room['room_alerts']:
+                    each_alert = list()
+                    each_alert.append(alert['id'])
+                    each_alert.append(isNull(str(alert["alert_type"])))
+                    each_alert.append(isNull(str(alert["cms_room_id"])))
+                    arr_alert_insert_query.append(each_alert)
+
+            cursor.executemany(str_room_insert_query, arr_room_insert_query)
+            cursor.executemany(str_alert_insert_query, arr_alert_insert_query)
     except Exception as e:
         print ("exception : get_room_list")
         print (str(e))
 
 def main():
     db_conn = MySQLdb.connect(
-        host="verdant.c5rdujz93n3m.us-east-1.rds.amazonaws.com",
-        database="verdant",
-        user="admin",
-        password="qweasdzxcasdqwe"
+        host="",
+        database="",
+        user="",
+        password=""
     )
 
     cursor = db_conn.cursor()
