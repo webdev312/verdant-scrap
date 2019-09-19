@@ -10,6 +10,7 @@ g_strToken = ""
 # Global variables
 g_arr_hotel = list()
 g_arr_room = list()
+g_arr_report = list()
 
 def isNull(entry):
     if (entry == "None"): return "null"
@@ -21,6 +22,9 @@ def get_total_page_count(strlink):
     last_page = resp['meta']['links']['last']
     last_page_num = last_page[last_page.find('&page=')+6:last_page.find('&perpage=')]
     return last_page_num
+
+def standard_date_format(strdate):
+    return strdate.replace("T", " ").replace(".000Z", "")
 
 def get_hotel_list(cursor):
     try:
@@ -176,7 +180,7 @@ def get_room_list(cursor):
         print ("exception : get_room_list")
         print (str(e))
 
-def get_report_data(cursor):
+def get_report_list(cursor):
     try:
         str_report_delete_query = "DELETE from reports WHERE room_id IN ("
         str_report_insert_query = """INSERT INTO reports (room_id, from_time, to_time, comp_runtime, heater_runtime, thermostat_id) VALUES (%s, %s, %s, %s, %s, %s)"""
@@ -199,6 +203,7 @@ def get_report_data(cursor):
                 each_report.append(isNull(str(report["heater_runtime"])))
                 each_report.append(isNull(str(report["room_id"])))
                 arr_report_insert_query.append(each_report)
+                g_arr_report.append(each_report)
 
         str_report_delete_query = str_report_delete_query[:-1] + ")"
         cursor.execute(str_report_delete_query)
@@ -207,6 +212,66 @@ def get_report_data(cursor):
         print ("exception : get_report_data")
         print (str(e))
 
+def get_unoccupied_runtime(cursor):
+    try:
+        for report in g_arr_report:
+            str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
+            unoccupied_runtime = requests.get(str_request_url).json()
+
+            str_ocr_delete_query = """DELETE from unoccupied_runtime WHERE thermostat_id = '%s' AND dt BETWEEN '%s' AND '%s'""" % (report[5], standard_date_format(report[1]), standard_date_format(report[2]))
+            cursor.execute(str_ocr_delete_query)
+
+            str_ocr_insert_query = """INSERT INTO unoccupied_runtime (s2, c, pt, f, hsp, h, occaux, ttl, occ, dt, t, ob, thermostat_id, hum, csp, sp, s1) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+            arr_ocr_insert_query = list()
+            for data in unoccupied_runtime["data"]:
+                arr_unoccupired_runtime = list()
+                arr_unoccupired_runtime.append(isNull(str(data["s2"])))
+                arr_unoccupired_runtime.append(isNull(str(data["c"])))
+                arr_unoccupired_runtime.append(isNull(str(data["pt"])))
+                arr_unoccupired_runtime.append(isNull(str(data["f"])))
+                arr_unoccupired_runtime.append(isNull(str(data["hsp"])))
+                arr_unoccupired_runtime.append(isNull(str(data["h"])))
+                arr_unoccupired_runtime.append(isNull(str(data["occaux"])))
+                arr_unoccupired_runtime.append(isNull(str(data["ttl"])))
+                arr_unoccupired_runtime.append(isNull(str(data["occ"])))
+                arr_unoccupired_runtime.append(isNull(str(data["dt"])))
+                arr_unoccupired_runtime.append(isNull(str(data["t"])))
+                arr_unoccupired_runtime.append(isNull(str(data["ob"])))
+                arr_unoccupired_runtime.append(isNull(str(data["id"])))
+                arr_unoccupired_runtime.append(isNull(str(data["hum"])))
+                arr_unoccupired_runtime.append(isNull(str(data["csp"])))
+                arr_unoccupired_runtime.append(isNull(str(data["sp"])))
+                arr_unoccupired_runtime.append(isNull(str(data["s1"])))
+                arr_ocr_insert_query.append(arr_unoccupired_runtime)
+            cursor.executemany(str_ocr_insert_query, arr_ocr_insert_query)
+    except Exception as e:
+        print ("exception : get unoccupired data")
+        print (str(e))
+
+def get_occ(cursor):
+    try:
+        for report in g_arr_report:
+            str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/occ-history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
+            occ_list = requests.get(str_request_url).json()
+
+            str_occ_delete_query = """DELETE from occ WHERE thermostat_id = '%s' AND start_time >= '%s' AND finish_time <= '%s'""" % (report[5], standard_date_format(report[1]), standard_date_format(report[2]))
+            cursor.execute(str_occ_delete_query)
+
+            str_occ_insert_query = """INSERT INTO occ (occ_status, start_time, finish_time, thermostat_id) VALUES (%s, %s, %s, %s)"""
+            arr_occ_insert_query = list()
+            for data in occ_list["data"]:
+                arr_occ = list()
+                arr_occ.append(isNull(str(data["occ"])))
+                arr_occ.append(isNull(str(data["start"])))
+                arr_occ.append(isNull(str(data["finish"])))
+                arr_occ.append(isNull(str(report[5])))
+                arr_occ_insert_query.append(arr_occ)
+
+            cursor.executemany(str_occ_insert_query, arr_occ_insert_query)
+    except Exception as e:
+        print ("exception : get occ data")
+        print (str(e))
+    
 def main():
     start = time.time()
     db_conn = MySQLdb.connect(
@@ -220,7 +285,9 @@ def main():
 
     get_hotel_list(cursor)
     get_room_list(cursor)
-    get_report_data(cursor)
+    get_report_list(cursor)
+    #get_unoccupied_runtime(cursor)
+    get_occ(cursor)
 
     db_conn.commit()
     db_conn.close()
