@@ -286,7 +286,7 @@ def main():
     get_hotel_list(cursor)
     get_room_list(cursor)
     get_report_list(cursor)
-    #get_unoccupied_runtime(cursor)
+    get_unoccupied_runtime(cursor)
     get_occ(cursor)
 
     db_conn.commit()
