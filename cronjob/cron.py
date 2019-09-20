@@ -294,7 +294,7 @@ def main():
     get_room_list(cursor)
     get_report_list(cursor)
     get_unoccupied_runtime(cursor)
-    get_occ(cursor)
+    #get_occ(cursor)
     #set_bi_data(cursor)
 
     db_conn.commit()
