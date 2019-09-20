@@ -251,13 +251,14 @@ def get_unoccupied_runtime(cursor):
 def get_occ(cursor):
     try:
         for report in g_arr_report:
+            print (str(report[5]))
             str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/occ-history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
             occ_list = requests.get(str_request_url).json()
 
-            str_occ_delete_query = """DELETE from occ WHERE thermostat_id = '%s' AND start_time >= '%s' AND finish_time <= '%s'""" % (report[5], standard_date_format(report[1]), standard_date_format(report[2]))
+            str_occ_delete_query = """DELETE from occhistory WHERE thermostat_id = '%s' AND start_time >= '%s' AND finish_time <= '%s'""" % (report[5], standard_date_format(report[1]), standard_date_format(report[2]))
             cursor.execute(str_occ_delete_query)
 
-            str_occ_insert_query = """INSERT INTO occ (occ_status, start_time, finish_time, thermostat_id) VALUES (%s, %s, %s, %s)"""
+            str_occ_insert_query = """INSERT INTO occhistory (occ_status, start_time, finish_time, thermostat_id) VALUES (%s, %s, %s, %s)"""
             arr_occ_insert_query = list()
             for data in occ_list["data"]:
                 arr_occ = list()
@@ -272,6 +273,12 @@ def get_occ(cursor):
         print ("exception : get occ data")
         print (str(e))
     
+def set_bi_data(cursor):
+    try:
+        print("set bit data")
+    except Exception as e:
+        print ("exception : set bit data")
+        print (str(e))
 def main():
     start = time.time()
     db_conn = MySQLdb.connect(
@@ -288,6 +295,7 @@ def main():
     get_report_list(cursor)
     get_unoccupied_runtime(cursor)
     get_occ(cursor)
+    #set_bi_data(cursor)
 
     db_conn.commit()
     db_conn.close()
