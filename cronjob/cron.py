@@ -5,7 +5,7 @@ import time
 from datetime import datetime
 
 # API token
-g_strToken = ""
+g_strToken = "769b49ae6b2fd4e6678d55cafd74f0c872969b68ed984d295096ddab0bb018b6"
 
 # Global variables
 g_arr_hotel = list()
@@ -275,10 +275,10 @@ def get_occ(cursor):
 def main():
     start = time.time()
     db_conn = MySQLdb.connect(
-        host="",
-        database="",
-        user="",
-        password=""
+        host="verdant.c5rdujz93n3m.us-east-1.rds.amazonaws.com",
+        database="verdant",
+        user="admin",
+        password="qweasdzxcasdqwe"
     )
 
     cursor = db_conn.cursor()
