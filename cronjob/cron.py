@@ -223,6 +223,8 @@ def get_unoccupied_runtime(cursor):
             arr_ocr_insert_query = list()
             for data in unoccupied_runtime["data"]:
                 arr_unoccupired_runtime = list()
+                arr_unoccupired_runtime.append(isNull(str(uuid.uuid4())))
+                arr_unoccupired_runtime.append(isNull(str(data["s2"])))
                 arr_unoccupired_runtime.append(isNull(str(data["s2"])))
                 arr_unoccupired_runtime.append(isNull(str(data["c"])))
                 arr_unoccupired_runtime.append(isNull(str(data["pt"])))
