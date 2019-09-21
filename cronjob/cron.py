@@ -215,7 +215,7 @@ def get_unoccupied_runtime(cursor):
         cursor.execute(str_ocr_delete_query)
 
         for report in g_arr_report:
-            str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
+            str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/history?from_date=%s&to_date=%s&access_token=%s""" % (report[6], report[2], report[3], g_strToken)
             print ("get_unoccupied_runtime : " + str_request_url)
             unoccupied_runtime = requests.get(str_request_url).json()
 
