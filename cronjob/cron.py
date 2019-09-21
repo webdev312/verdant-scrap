@@ -1,7 +1,9 @@
 import json
 import requests
-import MySQLdb
+import urllib2
+import psycopg2
 import time
+import uuid
 from datetime import datetime
 
 # API token
@@ -14,7 +16,7 @@ g_arr_report = list()
 
 def isNull(entry):
     if (entry == "None"): return "null"
-    return entry.replace("’", "'")
+    return entry.replace("\u2019", "'")
 
 def get_total_page_count(strlink):
     req_link = strlink + "&access_token=" + g_strToken
@@ -32,18 +34,18 @@ def get_hotel_list(cursor):
 
         strlinkHotel = "https://api.thermostatsolutions.com/v1/hotels/?page=0&perpage=" + str(n_pages) + "&access_token=" + g_strToken
         resp = requests.get(strlinkHotel).json()
-        for hotel in resp["data"]: g_arr_hotel.append(hotel)
+        for hotel in resp["data"]:
+            data = json.dumps(hotel).replace("\u2019", "'")
+            g_arr_hotel.append(json.loads(data))
 
-        str_delete_query = "DELETE from hotel WHERE hotel_id IN ("
-        for hotel in g_arr_hotel:
-            str_delete_query = str_delete_query + str(hotel["hotel_id"]) + ","
-        str_delete_query = str_delete_query[:-1] + ")"
+        str_delete_query = "DELETE from hotel"
         cursor.execute(str_delete_query)
 
-        str_insert_query = """INSERT INTO hotel (hotel_id, hotel_organization_id, hotel_language, hotel_name, hotel_date_modified, hotel_is_active, hotel_deleted, hotel_date_created, hotel_created_by, hotel_modified_by, hotel_network_id, last_update, hotel_energy_defaults_on, hotel_equipment_defaults_on, hotel_humidity_on, hotel_deployment_stage, hotel_screen_settings_on, hotel_default_size_large, hotel_message_degrees_show, hotel_message_screen_contrast, hotel_default_energy_profile, hotel_default_equipment_profile, hotel_presets_on, hotel_pms_integration_on, hotel_additional_network_on, hotel_remote_temperature_control_on, hotel_multi_factor_authentication_on, hotel_btu_average, hotel_kwh_rate, hotel_scheduler_on, hotel_ei_on, hotel_ei_on_date, hotel_vip_ctrl_on, hotel_thermostat_ctrl_on, hotel_ei_saving_screen) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        str_insert_query = """INSERT INTO hotel (uuid, hotel_id, hotel_organization_id, hotel_language, hotel_name, hotel_date_modified, hotel_is_active, hotel_deleted, hotel_date_created, hotel_created_by, hotel_modified_by, hotel_network_id, last_update, hotel_energy_defaults_on, hotel_equipment_defaults_on, hotel_humidity_on, hotel_deployment_stage, hotel_screen_settings_on, hotel_default_size_large, hotel_message_degrees_show, hotel_message_screen_contrast, hotel_default_energy_profile, hotel_default_equipment_profile, hotel_presets_on, hotel_pms_integration_on, hotel_additional_network_on, hotel_remote_temperature_control_on, hotel_multi_factor_authentication_on, hotel_btu_average, hotel_kwh_rate, hotel_scheduler_on, hotel_ei_on, hotel_ei_on_date, hotel_vip_ctrl_on, hotel_thermostat_ctrl_on, hotel_ei_saving_screen) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
         arr_insert_query = list()
         for hotel in g_arr_hotel:
             each_hotel = list()
+            each_hotel.append(isNull(str(uuid.uuid4())))
             each_hotel.append(isNull(str(hotel["hotel_id"])))
             each_hotel.append(isNull(str(hotel["hotel_organization_id"])))
             each_hotel.append(isNull(str(hotel["hotel_language"])))
@@ -88,6 +90,11 @@ def get_hotel_list(cursor):
 
 def get_room_list(cursor):
     try:
+        str_room_delete_query = "DELETE from room"
+        str_alert_delete_query = "DELETE from roomalerts"
+        cursor.execute(str_room_delete_query)
+        cursor.execute(str_alert_delete_query)
+
         for hotel in g_arr_hotel:
             print(hotel["hotel_id"])
             strFirstRoom = "https://api.thermostatsolutions.com/v1/rooms/?page=0&perpage=1&hotel_id=" + str(hotel['hotel_id'])
@@ -101,22 +108,13 @@ def get_room_list(cursor):
                 g_arr_room.append(room)
                 arr_room.append(room)
 
-            str_room_delete_query = "DELETE from room WHERE room_id IN ("
-            str_alert_delete_query = "DELETE from roomalerts WHERE cms_room_id IN ("
-            for room in arr_room:
-                str_room_delete_query = str_room_delete_query + str(room["room_id"]) + ","
-                str_alert_delete_query = str_alert_delete_query + str(room["room_id"]) + ","
-            str_room_delete_query = str_room_delete_query[:-1] + ")"
-            str_alert_delete_query = str_alert_delete_query[:-1] + ")"
-            cursor.execute(str_room_delete_query)
-            cursor.execute(str_alert_delete_query)
-
-            str_room_insert_query = """INSERT INTO room (room_id, room_hotel_id, room_name, room_date_created, room_date_modified, room_deleted, room_created_by, room_modified_by, room_energy_profile_id, room_vip_mode, room_equipment_profile_id, room_pms_enabled, room_pms_profile_id, room_number, room_edi_termostat_location, room_edi_termostat_location_hex_b1, room_edi_termostat_location_hex_b2, room_floor_plan_id, room_floor_plan_pos_x, room_floor_plan_pos_y, room_floor_number, room_network_id, room_humidity_allowed, room_energy_report_running, room_cooler_counter, room_heater_counter, room_system_runtime_counter, room_system_runtime_counter_last_value, room_cooler_counter_last_value, room_heater_counter_last_value, room_occupancy_flag, room_hw, room_sw, svn_pic, svn_radio, active_sensor, roomp_termostat_id, roomp_occupancy, roomp_temperature, roomp_thermostat, roomp_heat_setpoint, roomp_cool_setpoint, roomp_auto_setpoint, roomp_system_status_1, roomp_system_status_2, roomp_recovery_time, roomp_max_setpoint_heat, roomp_min_setpoint_cool) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+            str_room_insert_query = """INSERT INTO room (uuid, room_id, room_hotel_id, room_name, room_date_created, room_date_modified, room_deleted, room_created_by, room_modified_by, room_energy_profile_id, room_vip_mode, room_equipment_profile_id, room_pms_enabled, room_pms_profile_id, room_number, room_edi_termostat_location, room_edi_termostat_location_hex_b1, room_edi_termostat_location_hex_b2, room_floor_plan_id, room_floor_plan_pos_x, room_floor_plan_pos_y, room_floor_number, room_network_id, room_humidity_allowed, room_energy_report_running, room_cooler_counter, room_heater_counter, room_system_runtime_counter, room_system_runtime_counter_last_value, room_cooler_counter_last_value, room_heater_counter_last_value, room_occupancy_flag, room_hw, room_sw, svn_pic, svn_radio, active_sensor, roomp_termostat_id, roomp_occupancy, roomp_temperature, roomp_thermostat, roomp_heat_setpoint, roomp_cool_setpoint, roomp_auto_setpoint, roomp_system_status_1, roomp_system_status_2, roomp_recovery_time, roomp_max_setpoint_heat, roomp_min_setpoint_cool) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             arr_room_insert_query = list()
             str_alert_insert_query = """INSERT INTO roomalerts (id, alert_type, cms_room_id) VALUES (%s, %s, %s)"""
             arr_alert_insert_query = list()
             for room in arr_room:
                 each_room = list()
+                each_room.append(isNull(str(uuid.uuid4())))
                 each_room.append(isNull(str(room["room_id"])))
                 each_room.append(isNull(str(room["room_hotel_id"])))
                 each_room.append(isNull(str(room["room_name"])))
@@ -182,12 +180,12 @@ def get_room_list(cursor):
 
 def get_report_list(cursor):
     try:
-        str_report_delete_query = "DELETE from reports WHERE room_id IN ("
-        str_report_insert_query = """INSERT INTO reports (room_id, from_time, to_time, comp_runtime, heater_runtime, thermostat_id) VALUES (%s, %s, %s, %s, %s, %s)"""
+        str_report_delete_query = "DELETE from reports"
+        cursor.execute(str_report_delete_query)
+
+        str_report_insert_query = """INSERT INTO reports (uuid, room_id, from_time, to_time, comp_runtime, heater_runtime, thermostat_id) VALUES (%s, %s, %s, %s, %s, %s, %s)"""
         arr_report_insert_query = list()
         for room in g_arr_room:
-            str_report_delete_query = str_report_delete_query + str(room['room_id']) + ","
-
             str_room_id = room['room_id']
             str_from = room['room_date_created']
             str_to = datetime.today().strftime('%Y-%m-%dT%H:%M:%S.000Z')
@@ -196,6 +194,7 @@ def get_report_list(cursor):
 
             for report in reports:
                 each_report = list()
+                each_report.append(isNull(str(uuid.uuid4())))
                 each_report.append(isNull(str(str_room_id)))
                 each_report.append(isNull(str(str_from)))
                 each_report.append(isNull(str(str_to)))
@@ -205,8 +204,6 @@ def get_report_list(cursor):
                 arr_report_insert_query.append(each_report)
                 g_arr_report.append(each_report)
 
-        str_report_delete_query = str_report_delete_query[:-1] + ")"
-        cursor.execute(str_report_delete_query)
         cursor.executemany(str_report_insert_query, arr_report_insert_query)
     except Exception as e:
         print ("exception : get_report_data")
@@ -214,14 +211,15 @@ def get_report_list(cursor):
 
 def get_unoccupied_runtime(cursor):
     try:
+        str_ocr_delete_query = """DELETE from unoccupied_runtime"""
+        cursor.execute(str_ocr_delete_query)
+
         for report in g_arr_report:
             str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
+            print ("get_unoccupied_runtime : " + str_request_url)
             unoccupied_runtime = requests.get(str_request_url).json()
 
-            str_ocr_delete_query = """DELETE from unoccupied_runtime WHERE thermostat_id = '%s' AND dt BETWEEN '%s' AND '%s'""" % (report[5], standard_date_format(report[1]), standard_date_format(report[2]))
-            cursor.execute(str_ocr_delete_query)
-
-            str_ocr_insert_query = """INSERT INTO unoccupied_runtime (s2, c, pt, f, hsp, h, occaux, ttl, occ, dt, t, ob, thermostat_id, hum, csp, sp, s1) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+            str_ocr_insert_query = """INSERT INTO unoccupied_runtime (uudi, s2, c, pt, f, hsp, h, occaux, ttl, occ, dt, t, ob, thermostat_id, hum, csp, sp, s1) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             arr_ocr_insert_query = list()
             for data in unoccupied_runtime["data"]:
                 arr_unoccupired_runtime = list()
@@ -251,8 +249,8 @@ def get_unoccupied_runtime(cursor):
 def get_occ(cursor):
     try:
         for report in g_arr_report:
-            print (str(report[5]))
             str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/occ-history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
+            print("get_occ : " + str_request_url)
             occ_list = requests.get(str_request_url).json()
 
             str_occ_delete_query = """DELETE from occhistory WHERE thermostat_id = '%s' AND start_time >= '%s' AND finish_time <= '%s'""" % (report[5], standard_date_format(report[1]), standard_date_format(report[2]))
@@ -281,10 +279,10 @@ def set_bi_data(cursor):
         print (str(e))
 def main():
     start = time.time()
-    db_conn = MySQLdb.connect(
+    db_conn = psycopg2.connect(
         host="verdant.c5rdujz93n3m.us-east-1.rds.amazonaws.com",
         database="verdant",
-        user="admin",
+        user="postgres",
         password="qweasdzxcasdqwe"
     )
 
