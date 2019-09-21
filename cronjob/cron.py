@@ -214,13 +214,16 @@ def get_unoccupied_runtime(cursor):
         str_ocr_delete_query = """DELETE from unoccupied_runtime"""
         cursor.execute(str_ocr_delete_query)
 
+        str_max_allow_query = "SET SESSION max_allowed_packet=500M"
+        cursor.execute(str_max_allow_query)
+
+        str_ocr_insert_query = """INSERT INTO unoccupied_runtime (uuid, s2, c, pt, f, hsp, h, occaux, ttl, occ, dt, t, ob, thermostat_id, hum, csp, sp, s1) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+        arr_ocr_insert_query = list()
         for report in g_arr_report:
             str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/history?from_date=%s&to_date=%s&access_token=%s""" % (report[6], report[2], report[3], g_strToken)
             print ("get_unoccupied_runtime : " + str_request_url)
             unoccupied_runtime = requests.get(str_request_url).json()
 
-            str_ocr_insert_query = """INSERT INTO unoccupied_runtime (uuid, s2, c, pt, f, hsp, h, occaux, ttl, occ, dt, t, ob, thermostat_id, hum, csp, sp, s1) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
-            arr_ocr_insert_query = list()
             for data in unoccupied_runtime["data"]:
                 print(data["s2"])
                 print(data["c"])
@@ -259,7 +262,7 @@ def get_unoccupied_runtime(cursor):
                 arr_unoccupired_runtime.append(isNull(str(data["sp"])))
                 arr_unoccupired_runtime.append(isNull(str(data["s1"])))
                 arr_ocr_insert_query.append(arr_unoccupired_runtime)
-            cursor.executemany(str_ocr_insert_query, arr_ocr_insert_query)
+        cursor.executemany(str_ocr_insert_query, arr_ocr_insert_query)
     except Exception as e:
         print ("exception : get unoccupired data")
         print (str(e))
