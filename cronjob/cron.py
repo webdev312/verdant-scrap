@@ -219,7 +219,7 @@ def get_unoccupied_runtime(cursor):
             print ("get_unoccupied_runtime : " + str_request_url)
             unoccupied_runtime = requests.get(str_request_url).json()
 
-            str_ocr_insert_query = """INSERT INTO unoccupied_runtime (uudi, s2, c, pt, f, hsp, h, occaux, ttl, occ, dt, t, ob, thermostat_id, hum, csp, sp, s1) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
+            str_ocr_insert_query = """INSERT INTO unoccupied_runtime (uuid, s2, c, pt, f, hsp, h, occaux, ttl, occ, dt, t, ob, thermostat_id, hum, csp, sp, s1) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"""
             arr_ocr_insert_query = list()
             for data in unoccupied_runtime["data"]:
                 arr_unoccupired_runtime = list()
