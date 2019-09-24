@@ -312,7 +312,31 @@ def get_occ(cursor):
     
 def set_bi_data(cursor):
     try:
-        print("set bit data")
+        str_delete_forecast = """DELETE FROM forecast"""
+        cursor.execute(str_delete_forecast)
+        str_insert_forecast = """
+            INSERT INTO forecast (hotel_id, hotel_name, room_id, thermostat_id, from_time, to_time, total_days, total_mins, occ_mins, unocc_mins, unocc_runtime, saved_time)
+            SELECT fst.*, snd.ucr, (fst.unocc_mins - snd.ucr) AS saved_time
+            FROM
+            (SELECT hotel.hotel_id, hotel.hotel_name, room.room_id, reports.thermostat_id, reports.from_time, reports.to_time,
+                TIMESTAMPDIFF(HOUR, reports.from_time, reports.to_time) / 24 AS total_days,
+                SUM(TIMESTAMPDIFF(SECOND, occhistory.start_time, occhistory.finish_time) / 60) AS total_mins,
+                SUM(IF(occhistory.occ_status != 0, TIMESTAMPDIFF(SECOND, occhistory.start_time, occhistory.finish_time) / 60, 0)) AS occ_mins,
+                SUM(IF(occhistory.occ_status = 0, TIMESTAMPDIFF(SECOND, occhistory.start_time, occhistory.finish_time) / 60, 0)) AS unocc_mins
+            FROM reports
+            LEFT JOIN room
+            ON room.room_id = reports.room_id
+            LEFT JOIN hotel
+            ON hotel.hotel_id = room.room_hotel_id
+            LEFT JOIN occhistory
+            ON occhistory.thermostat_id = reports.thermostat_id
+            GROUP BY reports.thermostat_id) AS fst,
+            (SELECT ur.c, ur.h, o.occ_status, ur.dt, o.finish_time, o.thermostat_id, SUM(TIMESTAMPDIFF(SECOND, ur.dt, o.finish_time) / 60) AS ucr
+            FROM unoccupied_runtime ur, occhistory o
+            WHERE ur.occ = 0 AND (ur.c > 0 OR ur.h > 0) AND ur.dt = o.start_time AND ur.thermostat_id = o.thermostat_id AND o.occ_status = 0
+            GROUP BY ur.thermostat_id) AS snd
+            WHERE fst.thermostat_id = snd.thermostat_id"""
+        cursor.execute(str_insert_forecast)
     except Exception as e:
         print ("exception : set bit data")
         print (str(e))
@@ -332,7 +356,7 @@ def main():
     get_report_list(cursor)
     get_unoccupied_runtime(cursor)
     get_occ(cursor)
-    #set_bi_data(cursor)
+    set_bi_data(cursor)
 
     db_conn.commit()
     db_conn.close()
