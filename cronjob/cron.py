@@ -200,7 +200,6 @@ def get_report_list(cursor):
                 arr_report_insert_query.append(each_report)
                 g_arr_report.append(each_report)
 
-        print(len(arr_report_insert_query))
         cursor.executemany(str_report_insert_query, arr_report_insert_query)
     except Exception as e:
         print ("exception : get_report_data")
@@ -231,7 +230,6 @@ def get_unoccupied_runtime(cursor):
             if (err_cnt > 20): continue
 
             unoccupied_runtime = unoccupied_runtime.json()
-            print(len(unoccupied_runtime["data"]))
 
             if (len(unoccupied_runtime["data"]) == 0): continue
 
@@ -259,9 +257,7 @@ def get_unoccupied_runtime(cursor):
                 arr_unoccupired_runtime.append(isNull(str(data["s1"])))
                 arr_ocr_insert_query.append(arr_unoccupired_runtime)
 
-            print("inserting")
             cursor.executemany(str_ocr_insert_query, arr_ocr_insert_query)
-            print("inserted")
     except Exception as e:
         print ("exception : get unoccupired data")
         print (str(e))
@@ -319,8 +315,8 @@ def set_bi_data(cursor):
             SELECT fst.*, snd.ucr, (fst.unocc_mins - snd.ucr) AS saved_time
             FROM
             (SELECT hotel.hotel_id, hotel.hotel_name, room.room_id, reports.thermostat_id, reports.from_time, reports.to_time,
-                TIMESTAMPDIFF(HOUR, reports.from_time, reports.to_time) / 24 AS total_days,
-                SUM(TIMESTAMPDIFF(SECOND, occhistory.start_time, occhistory.finish_time) / 60) AS total_mins,
+                TIMESTAMPDIFF(HOUR, reports.from_time, NOW()) / 24 AS total_days,
+	            TIMESTAMPDIFF(HOUR, reports.from_time, NOW()) * 60 AS total_mins,
                 SUM(IF(occhistory.occ_status != 0, TIMESTAMPDIFF(SECOND, occhistory.start_time, occhistory.finish_time) / 60, 0)) AS occ_mins,
                 SUM(IF(occhistory.occ_status = 0, TIMESTAMPDIFF(SECOND, occhistory.start_time, occhistory.finish_time) / 60, 0)) AS unocc_mins
             FROM reports
@@ -362,6 +358,7 @@ def main():
     db_conn.close()
     end = time.time()
     print (end-start)
+    print (str(datetime.now()))
 
 
 if __name__ == '__main__':
