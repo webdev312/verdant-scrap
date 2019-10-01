@@ -210,9 +210,9 @@ def get_unoccupied_runtime(cursor):
         str_ocr_delete_query = """DELETE from unoccupied_runtime"""
         cursor.execute(str_ocr_delete_query)
 
-        for report in g_arr_report:
+        for index, report in enumerate(g_arr_report):
+            print(str(index) + ": get_unoccupied_runtime")
             time.sleep(3)
-
             str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
             u_a = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.82 Safari/537.36"
 
@@ -266,9 +266,9 @@ def get_unoccupied_runtime(cursor):
 
 def get_occ(cursor):
     try:
-        for report in g_arr_report:
+        for index, report in enumerate(g_arr_report):
+            print(str(index) + ": get_occ")
             time.sleep(3)
-
             str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/occ-history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
             
             u_a = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.82 Safari/537.36"
@@ -360,7 +360,7 @@ def main():
     get_report_list(cursor)
     get_unoccupied_runtime(cursor)
     get_occ(cursor)
-    set_bi_data(cursor)
+    #set_bi_data(cursor)
 
     db_conn.commit()
     db_conn.close()
