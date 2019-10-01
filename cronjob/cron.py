@@ -266,6 +266,9 @@ def get_unoccupied_runtime(cursor):
 
 def get_occ(cursor):
     try:
+        str_occ_delete_query = """DELETE from occhistory"""
+        cursor.execute(str_occ_delete_query)
+
         for index, report in enumerate(g_arr_report):
             print(str(index) + ": get_occ")
             time.sleep(1)
@@ -291,9 +294,6 @@ def get_occ(cursor):
             occ_list = occ_list.json()
 
             if (len(occ_list["data"]) == 0): continue
-
-            str_occ_delete_query = """DELETE from occhistory WHERE thermostat_id = '%s' AND start_time >= '%s' AND finish_time <= '%s'""" % (report[5], standard_date_format(report[1]), standard_date_format(report[2]))
-            cursor.execute(str_occ_delete_query)
 
             str_occ_insert_query = """INSERT INTO occhistory (occ_status, start_time, finish_time, thermostat_id) VALUES (%s, %s, %s, %s)"""
             arr_occ_insert_query = list()
