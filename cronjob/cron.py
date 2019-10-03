@@ -20,8 +20,11 @@ def isNull(entry):
 def get_total_page_count(strlink):
     req_link = strlink + "&access_token=" + g_strToken
     resp = requests.get(req_link).json()
+
+    if (resp['meta']['links']['last'] == 0): return 0
     last_page = resp['meta']['links']['last']
     last_page_num = last_page[last_page.find('&page=')+6:last_page.find('&perpage=')]
+    
     return last_page_num
 
 def standard_date_format(strdate):
@@ -51,11 +54,11 @@ def get_hotel_list(cursor):
             each_hotel.append(isNull(str(hotel["hotel_date_modified"])))
             each_hotel.append(isNull(str(hotel["hotel_is_active"])))
             each_hotel.append(isNull(str(hotel["hotel_deleted"])))
-            each_hotel.append(isNull(standard_date_format(str(hotel["hotel_date_created"]))))
+            each_hotel.append(isNull(str(hotel["hotel_date_created"])))
             each_hotel.append(isNull(str(hotel["hotel_created_by"])))
             each_hotel.append(isNull(str(hotel["hotel_modified_by"])))
             each_hotel.append(isNull(str(hotel["hotel_network_id"])))
-            each_hotel.append(isNull(standard_date_format(str(hotel["last_update"]))))
+            each_hotel.append(isNull(str(hotel["last_update"])))
             each_hotel.append(isNull(str(hotel["hotel_energy_defaults_on"])))
             each_hotel.append(isNull(str(hotel["hotel_equipment_defaults_on"])))
             each_hotel.append(isNull(str(hotel["hotel_humidity_on"])))
@@ -75,7 +78,7 @@ def get_hotel_list(cursor):
             each_hotel.append(isNull(str(hotel["hotel_kwh_rate"])))
             each_hotel.append(isNull(str(hotel["hotel_scheduler_on"])))
             each_hotel.append(isNull(str(hotel["hotel_ei_on"])))
-            each_hotel.append(isNull(standard_date_format(str(hotel["hotel_ei_on_date"]))))
+            each_hotel.append(isNull(str(hotel["hotel_ei_on_date"])))
             each_hotel.append(isNull(str(hotel["hotel_vip_ctrl_on"])))
             each_hotel.append(isNull(str(hotel["hotel_thermostat_ctrl_on"])))
             each_hotel.append(isNull(str(hotel["hotel_ei_saving_screen"])))
@@ -98,6 +101,8 @@ def get_room_list(cursor):
             strFirstRoom = "https://api.thermostatsolutions.com/v1/rooms/?page=0&perpage=1&hotel_id=" + str(hotel['hotel_id'])
             n_pages = get_total_page_count(strFirstRoom)
 
+            if (n_pages == 0): continue
+
             strlinkRoom = "https://api.thermostatsolutions.com/v1/rooms/?hotel_id=" + str(hotel['hotel_id']) + "&page=0&perpage=" + str(n_pages) + "&access_token=" + g_strToken
             resp = requests.get(strlinkRoom).json()
 
@@ -115,7 +120,7 @@ def get_room_list(cursor):
                 each_room.append(isNull(str(room["room_id"])))
                 each_room.append(isNull(str(room["room_hotel_id"])))
                 each_room.append(isNull(str(room["room_name"])))
-                each_room.append(isNull(standard_date_format(str(room["room_date_created"]))))
+                each_room.append(isNull(str(room["room_date_created"])))
                 each_room.append(isNull(str(room["room_date_modified"])))
                 each_room.append(isNull(str(room["room_deleted"])))
                 each_room.append(isNull(str(room["room_created_by"])))
@@ -184,8 +189,8 @@ def get_report_list(cursor):
         arr_report_insert_query = list()
         for room in g_arr_room:
             str_room_id = room['room_id']
-            str_from = standard_date_format(room['room_date_created'])
-            str_to = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
+            str_from = room['room_date_created']
+            str_to = datetime.today().strftime('%Y-%m-%dT%H:%M:%S.000Z')
             str_request_url = """https://api.thermostatsolutions.com/v1/reports/runtime/hotel/room/%s?from=%s&to=%s&access_token=%s""" % (str_room_id, str_from, str_to, g_strToken)
             reports = requests.get(str_request_url).json()
 
@@ -212,7 +217,7 @@ def get_unoccupied_runtime(cursor):
 
         for index, report in enumerate(g_arr_report):
             print(str(index) + ": get_unoccupied_runtime")
-            time.sleep(1)
+            time.sleep(3)
             str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
             u_a = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.82 Safari/537.36"
 
@@ -266,12 +271,9 @@ def get_unoccupied_runtime(cursor):
 
 def get_occ(cursor):
     try:
-        str_occ_delete_query = """DELETE from occhistory"""
-        cursor.execute(str_occ_delete_query)
-
         for index, report in enumerate(g_arr_report):
             print(str(index) + ": get_occ")
-            time.sleep(1)
+            time.sleep(3)
             str_request_url = """https://api.thermostatsolutions.com/v1/thermostats/%s/occ-history?from_date=%s&to_date=%s&access_token=%s""" % (report[5], report[1], report[2], g_strToken)
             
             u_a = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.82 Safari/537.36"
@@ -295,6 +297,9 @@ def get_occ(cursor):
 
             if (len(occ_list["data"]) == 0): continue
 
+            str_occ_delete_query = """DELETE from occhistory WHERE thermostat_id = '%s' AND start_time >= '%s' AND finish_time <= '%s'""" % (report[5], standard_date_format(report[1]), standard_date_format(report[2]))
+            cursor.execute(str_occ_delete_query)
+
             str_occ_insert_query = """INSERT INTO occhistory (occ_status, start_time, finish_time, thermostat_id) VALUES (%s, %s, %s, %s)"""
             arr_occ_insert_query = list()
             for data in occ_list["data"]:
@@ -316,30 +321,28 @@ def set_bi_data(cursor):
         cursor.execute(str_delete_forecast)
         str_insert_forecast = """
             INSERT INTO forecast (hotel_id, hotel_name, room_id, thermostat_id, from_time, to_time, total_days, total_mins, occ_mins, unocc_mins, unocc_runtime, occ_runtime, saved_time)
-            SELECT fst.*, snd.ucr, thr.cr, (fst.unocc_mins - snd.ucr) AS saved_time
+            SELECT fst.*, snd.ucr, thr.ucr, (fst.unocc_mins - snd.ucr) AS saved_time
             FROM
-            (SELECT hotel.hotel_id, hotel.hotel_name, zfst.* 
-            FROM
-                (SELECT reports.room_id, reports.thermostat_id, reports.from_time, reports.to_time,
+            (SELECT hotel.hotel_id, hotel.hotel_name, room.room_id, reports.thermostat_id, reports.from_time, reports.to_time,
                 TIMESTAMPDIFF(HOUR, reports.from_time, NOW()) / 24 AS total_days,
                 TIMESTAMPDIFF(HOUR, reports.from_time, NOW()) * 60 AS total_mins,
                 SUM(IF(occhistory.occ_status != 0, TIMESTAMPDIFF(SECOND, occhistory.start_time, occhistory.finish_time) / 60, 0)) AS occ_mins,
                 SUM(IF(occhistory.occ_status = 0, TIMESTAMPDIFF(SECOND, occhistory.start_time, occhistory.finish_time) / 60, 0)) AS unocc_mins
-                    FROM occhistory
-                    LEFT JOIN reports
-                    ON occhistory.thermostat_id = reports.thermostat_id
-                    GROUP BY occhistory.thermostat_id) AS zfst
-                    LEFT JOIN room
-                    ON room.room_id = zfst.room_id
-                    LEFT JOIN hotel
-                    ON hotel.hotel_id = room.room_hotel_id) AS fst,
+                FROM reports
+                LEFT JOIN room
+                ON room.room_id = reports.room_id
+                LEFT JOIN hotel
+                ON hotel.hotel_id = room.room_hotel_id
+                LEFT JOIN occhistory
+                ON occhistory.thermostat_id = reports.thermostat_id
+                GROUP BY reports.thermostat_id) AS fst,
                 (SELECT ur.c, ur.h, o.occ_status, ur.dt, o.finish_time, o.thermostat_id, SUM(TIMESTAMPDIFF(SECOND, ur.dt, o.finish_time) / 60) AS ucr
                 FROM unoccupied_runtime ur, occhistory o
-                WHERE ur.thermostat_id = o.thermostat_id AND ur.occ = 0 AND (ur.c > 0 OR ur.h > 0) AND ur.dt = o.start_time
+                WHERE ur.occ = 0 AND (ur.c > 0 OR ur.h > 0) AND ur.dt = o.start_time AND ur.thermostat_id = o.thermostat_id AND o.occ_status = 0
                 GROUP BY ur.thermostat_id) AS snd,
-                (SELECT ur.c, ur.h, o.occ_status, ur.dt, o.finish_time, o.thermostat_id, SUM(TIMESTAMPDIFF(SECOND, ur.dt, o.finish_time) / 60) AS cr
+                (SELECT ur.c, ur.h, o.occ_status, ur.dt, o.finish_time, o.thermostat_id, SUM(TIMESTAMPDIFF(SECOND, ur.dt, o.finish_time) / 60) AS ucr
                 FROM unoccupied_runtime ur, occhistory o
-                WHERE ur.thermostat_id = o.thermostat_id AND ur.occ > 0 AND (ur.c > 0 OR ur.h > 0) AND ur.dt = o.start_time
+                WHERE ur.occ > 0 AND (ur.c > 0 OR ur.h > 0) AND ur.dt = o.start_time AND ur.thermostat_id = o.thermostat_id AND o.occ_status > 0
                 GROUP BY ur.thermostat_id) AS thr
                 WHERE fst.thermostat_id = snd.thermostat_id AND snd.thermostat_id = thr.thermostat_id"""
         cursor.execute(str_insert_forecast)
