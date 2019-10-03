@@ -21,7 +21,7 @@ def get_total_page_count(strlink):
     req_link = strlink + "&access_token=" + g_strToken
     resp = requests.get(req_link).json()
 
-    if (resp['meta']['links']['last'] == 0): return 0
+    if (resp['meta']['count'] == 0): return 0
     last_page = resp['meta']['links']['last']
     last_page_num = last_page[last_page.find('&page=')+6:last_page.find('&perpage=')]
     
