@@ -189,7 +189,7 @@ def get_report_list(cursor):
         arr_report_insert_query = list()
         for room in g_arr_room:
             str_room_id = room['room_id']
-            str_from = room['room_date_created']
+            str_from = standard_date_format(room['room_date_created'])
             str_to = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
             str_request_url = """https://api.thermostatsolutions.com/v1/reports/runtime/hotel/room/%s?from=%s&to=%s&access_token=%s""" % (str_room_id, str_from, str_to, g_strToken)
             reports = requests.get(str_request_url).json()
