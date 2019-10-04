@@ -54,11 +54,11 @@ def get_hotel_list(cursor):
             each_hotel.append(isNull(str(hotel["hotel_date_modified"])))
             each_hotel.append(isNull(str(hotel["hotel_is_active"])))
             each_hotel.append(isNull(str(hotel["hotel_deleted"])))
-            each_hotel.append(isNull(str(hotel["hotel_date_created"])))
+            each_hotel.append(isNull(standard_date_format(str(hotel["hotel_date_created"]))))
             each_hotel.append(isNull(str(hotel["hotel_created_by"])))
             each_hotel.append(isNull(str(hotel["hotel_modified_by"])))
             each_hotel.append(isNull(str(hotel["hotel_network_id"])))
-            each_hotel.append(isNull(str(hotel["last_update"])))
+            each_hotel.append(isNull(standard_date_format(str(hotel["last_update"]))))
             each_hotel.append(isNull(str(hotel["hotel_energy_defaults_on"])))
             each_hotel.append(isNull(str(hotel["hotel_equipment_defaults_on"])))
             each_hotel.append(isNull(str(hotel["hotel_humidity_on"])))
@@ -78,7 +78,7 @@ def get_hotel_list(cursor):
             each_hotel.append(isNull(str(hotel["hotel_kwh_rate"])))
             each_hotel.append(isNull(str(hotel["hotel_scheduler_on"])))
             each_hotel.append(isNull(str(hotel["hotel_ei_on"])))
-            each_hotel.append(isNull(str(hotel["hotel_ei_on_date"])))
+            each_hotel.append(isNull(standard_date_format(str(hotel["hotel_ei_on_date"]))))
             each_hotel.append(isNull(str(hotel["hotel_vip_ctrl_on"])))
             each_hotel.append(isNull(str(hotel["hotel_thermostat_ctrl_on"])))
             each_hotel.append(isNull(str(hotel["hotel_ei_saving_screen"])))
@@ -120,7 +120,7 @@ def get_room_list(cursor):
                 each_room.append(isNull(str(room["room_id"])))
                 each_room.append(isNull(str(room["room_hotel_id"])))
                 each_room.append(isNull(str(room["room_name"])))
-                each_room.append(isNull(str(room["room_date_created"])))
+                each_room.append(isNull(standard_date_format(str(room["room_date_created"]))))
                 each_room.append(isNull(str(room["room_date_modified"])))
                 each_room.append(isNull(str(room["room_deleted"])))
                 each_room.append(isNull(str(room["room_created_by"])))
@@ -190,7 +190,7 @@ def get_report_list(cursor):
         for room in g_arr_room:
             str_room_id = room['room_id']
             str_from = room['room_date_created']
-            str_to = datetime.today().strftime('%Y-%m-%dT%H:%M:%S.000Z')
+            str_to = datetime.today().strftime('%Y-%m-%d %H:%M:%S')
             str_request_url = """https://api.thermostatsolutions.com/v1/reports/runtime/hotel/room/%s?from=%s&to=%s&access_token=%s""" % (str_room_id, str_from, str_to, g_strToken)
             reports = requests.get(str_request_url).json()
 
