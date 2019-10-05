@@ -32,6 +32,7 @@ def standard_date_format(strdate):
 
 def get_hotel_list(cursor):
     try:
+        print('get_hotel_list')
         n_pages = get_total_page_count("https://api.thermostatsolutions.com/v1/hotels/?page=0&perpage=1")
 
         strlinkHotel = "https://api.thermostatsolutions.com/v1/hotels/?page=0&perpage=" + str(n_pages) + "&access_token=" + g_strToken
@@ -91,6 +92,8 @@ def get_hotel_list(cursor):
 
 def get_room_list(cursor):
     try:
+        print('get_room_list')
+
         str_room_delete_query = "DELETE from room"
         str_alert_delete_query = "DELETE from roomalerts"
         cursor.execute(str_room_delete_query)
@@ -182,6 +185,8 @@ def get_room_list(cursor):
 
 def get_report_list(cursor):
     try:
+        print('get_report_list')
+
         str_report_delete_query = "DELETE from reports"
         cursor.execute(str_report_delete_query)
 
@@ -212,6 +217,8 @@ def get_report_list(cursor):
 
 def get_unoccupied_runtime(cursor):
     try:
+        print('get_unocc_runtime')
+
         str_ocr_delete_query = """DELETE from unoccupied_runtime"""
         cursor.execute(str_ocr_delete_query)
 
@@ -271,6 +278,8 @@ def get_unoccupied_runtime(cursor):
 
 def get_occ(cursor):
     try:
+        print('get_occ')
+
         for index, report in enumerate(g_arr_report):
             print(str(index) + ": get_occ")
             time.sleep(3)
@@ -317,6 +326,8 @@ def get_occ(cursor):
     
 def set_bi_data(cursor):
     try:
+        print('set_bi_data')
+
         str_delete_forecast = """DELETE FROM forecast"""
         cursor.execute(str_delete_forecast)
         str_insert_forecast = """
@@ -377,7 +388,7 @@ def main():
 
     set_bi_data(cursor)
     db_conn.commit()
-    
+
     db_conn.close()
     end = time.time()
     print (end-start)
