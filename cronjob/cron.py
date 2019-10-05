@@ -85,7 +85,6 @@ def get_hotel_list(cursor):
             arr_insert_query.append(each_hotel)
             
         cursor.executemany(str_insert_query, arr_insert_query)
-        db_conn.commit()
     except Exception as e:
         print ("exception : get_hotel_list")
         print (str(e))
@@ -177,7 +176,6 @@ def get_room_list(cursor):
 
             cursor.executemany(str_room_insert_query, arr_room_insert_query)
             cursor.executemany(str_alert_insert_query, arr_alert_insert_query)
-            db_conn.commit()
     except Exception as e:
         print ("exception : get_room_list")
         print (str(e))
@@ -208,7 +206,6 @@ def get_report_list(cursor):
                 g_arr_report.append(each_report)
 
         cursor.executemany(str_report_insert_query, arr_report_insert_query)
-        db_conn.commit()
     except Exception as e:
         print ("exception : get_report_data")
         print (str(e))
@@ -268,7 +265,6 @@ def get_unoccupied_runtime(cursor):
                 arr_ocr_insert_query.append(arr_unoccupired_runtime)
 
             cursor.executemany(str_ocr_insert_query, arr_ocr_insert_query)
-            db_conn.commit()
     except Exception as e:
         print ("exception : get unoccupired data")
         print (str(e))
@@ -315,7 +311,6 @@ def get_occ(cursor):
                 arr_occ_insert_query.append(arr_occ)
 
             cursor.executemany(str_occ_insert_query, arr_occ_insert_query)
-            db_conn.commit()
     except Exception as e:
         print ("exception : get occ data")
         print (str(e))
@@ -351,7 +346,6 @@ def set_bi_data(cursor):
                 GROUP BY ur.thermostat_id) AS thr
                 WHERE fst.thermostat_id = snd.thermostat_id AND snd.thermostat_id = thr.thermostat_id"""
         cursor.execute(str_insert_forecast)
-        db_conn.commit()
     except Exception as e:
         print ("exception : set bit data")
         print (str(e))
@@ -367,12 +361,23 @@ def main():
     cursor = db_conn.cursor()
 
     get_hotel_list(cursor)
-    get_room_list(cursor)
-    get_report_list(cursor)
-    get_unoccupied_runtime(cursor)
-    get_occ(cursor)
-    set_bi_data(cursor)
+    db_conn.commit()
 
+    get_room_list(cursor)
+    db_conn.commit()
+
+    get_report_list(cursor)
+    db_conn.commit()
+
+    get_unoccupied_runtime(cursor)
+    db_conn.commit()
+
+    get_occ(cursor)
+    db_conn.commit()
+
+    set_bi_data(cursor)
+    db_conn.commit()
+    
     db_conn.close()
     end = time.time()
     print (end-start)
