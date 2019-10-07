@@ -413,7 +413,7 @@ def main():
 
     db_conn.close()
     end = time.time()
-    print (end-start)
+    print (end - start)
     print (str(datetime.now()))
 
 
