@@ -360,6 +360,25 @@ def set_bi_data(cursor):
     except Exception as e:
         print ("exception : set bit data")
         print (str(e))
+
+
+def set_bi_data_new(cursor):
+    try:
+        print('set_bi_data_new')
+
+        str_delete_tstat = """DELETE FROM tstat"""
+        cursor.execute(str_delete_tstat)
+        str_insert_tstat = """
+            INSERT INTO tstat (seconds, temp, starttime, finishtime, heat, ac)
+            SELECT TIMESTAMPDIFF(SECOND, ur.dt, o.finish_time), ur.t, ur.dt, o.finish_time, h, c
+            FROM unoccupied_runtime ur, occhistory o
+            WHERE ur.dt = o.start_time AND ur.thermostat_id = o.thermostat_id"""
+        cursor.execute(str_insert_tstat)
+        
+    except Exception as e:
+        print ("exception : set bit data new")
+        print (str(e))
+
 def main():
     start = time.time()
     db_conn = MySQLdb.connect(
@@ -387,6 +406,7 @@ def main():
     db_conn.commit()
 
     set_bi_data(cursor)
+    set_bi_data_new(cursor)
     db_conn.commit()
 
     db_conn.close()
