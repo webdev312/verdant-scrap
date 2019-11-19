@@ -369,8 +369,8 @@ def set_bi_data_new(cursor):
         str_delete_tstat = """DELETE FROM tstat"""
         cursor.execute(str_delete_tstat)
         str_insert_tstat = """
-            INSERT INTO tstat (seconds, temp, starttime, finishtime, heat, ac)
-            SELECT TIMESTAMPDIFF(SECOND, ur.dt, o.finish_time), ur.t, ur.dt, o.finish_time, h, c
+            INSERT INTO tstat (seconds, temp, starttime, finishtime, heat, ac, thermostat_id)
+            SELECT TIMESTAMPDIFF(SECOND, ur.dt, o.finish_time), ur.t, ur.dt, o.finish_time, h, c, o.thermostat_id
             FROM unoccupied_runtime ur, occhistory o
             WHERE ur.dt = o.start_time AND ur.thermostat_id = o.thermostat_id"""
         cursor.execute(str_insert_tstat)
@@ -385,7 +385,7 @@ def main():
         host="verdantdb.mysql.database.azure.com",
         database="verdant",
         user="admin_verdant@verdantdb",
-        password="qweasdzxcasdqwe"
+        password="1q2w3e4r!Q@W#E$R"
     )
 
     cursor = db_conn.cursor()
@@ -406,6 +406,8 @@ def main():
     db_conn.commit()
 
     set_bi_data(cursor)
+    db_conn.commit()
+
     set_bi_data_new(cursor)
     db_conn.commit()
 
